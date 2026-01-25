@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  grafana:
+    image: grafana/grafana:10.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=tobiasworkstech-ssh-prometheus-datasource
+      - GF_LOG_LEVEL=debug
+    volumes:
+      - ../plugin/dist:/var/lib/grafana/plugins/tobiasworkstech-ssh-prometheus-datasource
+      - ./provisioning:/etc/grafana/provisioning
+    depends_on:
+      - ssh-server
+      - prometheus
+    networks:
+      - grafana-net
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - grafana-net
+
+  ssh-server:
+    image: linuxserver/openssh-server:latest
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=testpassword
+      - USER_NAME=testuser
+    ports:
+      - "2222:2222"
+    volumes:
+      - ./sshd_config:/etc/ssh/sshd_config:ro
+    networks:
+      - grafana-net
+
+networks:
+  grafana-net:
+    driver: bridge

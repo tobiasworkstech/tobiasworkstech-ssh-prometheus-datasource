@@ -1,0 +1,34 @@
+# Multi-stage build for the plugin
+FROM node:18-alpine AS frontend-builder
+
+WORKDIR /app/plugin
+COPY plugin/package*.json ./
+RUN npm ci
+
+COPY plugin/src ./src
+COPY plugin/tsconfig.json ./
+COPY plugin/.config ./.config
+
+RUN npm run build
+
+
+FROM golang:1.21-alpine AS backend-builder
+
+RUN apk add --no-cache git
+
+WORKDIR /app/plugin
+COPY plugin/go.mod plugin/go.sum ./
+RUN go mod download
+
+COPY plugin/pkg ./pkg
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o dist/gpx_ssh_prometheus_datasource_linux_amd64 ./pkg
+
+
+FROM alpine:3.18 AS final
+
+WORKDIR /plugin
+COPY --from=frontend-builder /app/plugin/dist ./
+COPY --from=backend-builder /app/plugin/dist/gpx_ssh_prometheus_datasource_linux_amd64 ./
+
+# This image is for extracting the built plugin
+# Usage: docker build -f docker/Dockerfile.plugin -o dist .

@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: SSH Prometheus
+    type: tobiasworkstech-ssh-prometheus-datasource
+    access: proxy
+    isDefault: true
+    jsonData:
+      sshHost: ssh-server
+      sshPort: "2222"
+      sshUsername: testuser
+      authMethod: password
+      prometheusUrl: http://prometheus:9090
+    secureJsonData:
+      sshPassword: testpassword

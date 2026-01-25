@@ -1,0 +1,7 @@
+Port 2222
+PermitRootLogin no
+PasswordAuthentication yes
+AllowTcpForwarding yes
+GatewayPorts no
+X11Forwarding no
+Subsystem sftp /usr/lib/ssh/sftp-server
