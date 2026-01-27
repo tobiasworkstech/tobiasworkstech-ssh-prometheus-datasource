@@ -154,7 +154,8 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
   const [labelsLoading, setLabelsLoading] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
 
-  // Parse existing expression into metric and label filters
+  // Parse existing expression into metric and label filters on initial load
+  // We intentionally only run this once to avoid overwriting builder state
   useEffect(() => {
     if (currentQuery.expr) {
       const match = currentQuery.expr.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)?(\{.*\})?$/);
@@ -179,10 +180,11 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadMetrics = useCallback(async () => {
-    if (metrics.length > 0) return;
+    if (metrics.length > 0) {return;}
     setMetricsLoading(true);
     try {
       const result = await datasource.metricFindQuery('metrics()');
@@ -196,7 +198,7 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
   }, [datasource, metrics.length]);
 
   const loadLabels = useCallback(async () => {
-    if (labels.length > 0) return;
+    if (labels.length > 0) {return;}
     setLabelsLoading(true);
     try {
       const result = await datasource.metricFindQuery('label_names()');
@@ -210,7 +212,7 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
   }, [datasource, labels.length]);
 
   const loadLabelValues = useCallback(async (label: string) => {
-    if (labelValues[label]) return;
+    if (labelValues[label]) {return;}
     try {
       const result = await datasource.metricFindQuery(`label_values(${label})`);
       const valueOptions = result.map((r) => ({ label: r.text, value: r.text })).sort((a, b) => a.label.localeCompare(b.label));
@@ -239,14 +241,16 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
     return expr;
   }, [selectedMetric, labelFilters]);
 
+  // Sync builder state to query expression
+  // We use query.expr from props for comparison to avoid stale closure issues
   useEffect(() => {
     if (editorMode === 'builder') {
       const expr = buildExpression();
-      if (expr !== currentQuery.expr) {
-        onChange({ ...currentQuery, expr });
+      if (expr !== query.expr) {
+        onChange({ ...defaultQuery, ...query, expr });
       }
     }
-  }, [selectedMetric, labelFilters, editorMode, buildExpression]);
+  }, [selectedMetric, labelFilters, editorMode, buildExpression, query, onChange]);
 
   const onMetricChange = (value: SelectableValue<string>) => {
     setSelectedMetric(value.value || null);
@@ -303,8 +307,8 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
   };
 
   const getTypeValue = () => {
-    if (currentQuery.instant && currentQuery.range) return 'both';
-    if (currentQuery.instant) return 'instant';
+    if (currentQuery.instant && currentQuery.range) {return 'both';}
+    if (currentQuery.instant) {return 'instant';}
     return 'range';
   };
 
