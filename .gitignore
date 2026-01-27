@@ -28,6 +28,9 @@ Thumbs.db
 debug
 *.log
 
+# ESLint cache
+.eslintcache
+
 # Secrets
 *.pem
 *.key
