@@ -127,6 +127,13 @@ Use these functions in variable queries:
 
 ## Development
 
+### Prerequisites
+
+- Node.js 18+
+- Go 1.23+
+- Docker & Docker Compose
+- Mage (Go build tool): `go install github.com/magefile/mage@latest`
+
 ### Running the Dev Environment
 
 The project includes a Docker Compose setup with Grafana, Prometheus, and an SSH server for testing.
@@ -141,7 +148,7 @@ mage -v build:linux
 
 # Start the dev environment
 cd ../docker
-docker-compose up
+docker compose up
 ```
 
 Once running, access:
@@ -171,7 +178,7 @@ npm run dev
 
 # Terminal 2: Run docker environment
 cd docker
-docker-compose up
+docker compose up
 ```
 
 ## Building

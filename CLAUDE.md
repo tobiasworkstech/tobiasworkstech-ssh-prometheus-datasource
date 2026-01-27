@@ -16,18 +16,42 @@ Grafana → Plugin Backend (Go) → SSH Tunnel → Remote Prometheus
 
 ## Project Structure
 
-- `plugin/src/` - Frontend React/TypeScript code
-- `plugin/pkg/` - Backend Go code
-- `docker/` - Development environment
+```
+.
+├── .github/workflows/     # CI/CD workflows
+│   ├── ci.yml            # Build and lint on push/PR
+│   └── release.yml       # Build, sign, and release on tags
+├── docker/               # Development environment
+│   ├── docker-compose.yml
+│   ├── prometheus.yml
+│   └── provisioning/
+├── plugin/               # Plugin source code
+│   ├── .config/          # Build and lint configuration
+│   │   ├── eslint.config.mjs
+│   │   └── webpack/
+│   ├── src/              # Frontend React/TypeScript
+│   │   ├── components/
+│   │   ├── datasource/
+│   │   ├── types/
+│   │   └── plugin.json
+│   ├── pkg/              # Backend Go code
+│   │   ├── plugin/
+│   │   └── ssh/
+│   ├── package.json
+│   └── go.mod
+├── CLAUDE.md             # This file
+├── README.md             # User documentation
+└── CHANGELOG.md          # Version history
+```
 
 ## Development
 
 ### Prerequisites
 
 - Node.js 18+
-- Go 1.21+
+- Go 1.23+
 - Docker & Docker Compose
-- Mage (Go build tool)
+- Mage (Go build tool): `go install github.com/magefile/mage@latest`
 
 ### Building
 
@@ -52,7 +76,7 @@ npm run dev
 
 # Terminal 2: Start dev environment
 cd docker
-docker-compose up
+docker compose up
 ```
 
 ### Testing
@@ -65,8 +89,18 @@ docker-compose up
    - SSH Username: testuser
    - Auth Method: Password
    - SSH Password: testpassword
-   - Remote Prometheus URL: http://prometheus:9090
+   - Remote Prometheus URL: http://127.0.0.1:9090
 4. Save & Test
+
+### Linting
+
+```bash
+cd plugin
+npm run lint        # Check for issues
+npm run lint:fix    # Auto-fix issues
+```
+
+ESLint uses flat config format (ESLint 9+) at `.config/eslint.config.mjs`.
 
 ## Key Files
 
@@ -79,6 +113,7 @@ docker-compose up
 | `plugin/src/datasource/datasource.ts` | Frontend datasource |
 | `plugin/pkg/plugin/datasource.go` | Backend with SSH tunnel + proxy |
 | `plugin/pkg/ssh/tunnel.go` | SSH connection management |
+| `plugin/.config/eslint.config.mjs` | ESLint flat config |
 
 ## Configuration Options
 
@@ -93,6 +128,32 @@ docker-compose up
 
 ### Prometheus
 - **Remote Prometheus URL**: URL as seen from remote host (default: http://127.0.0.1:9090)
+
+## CI/CD
+
+### Workflows
+
+- **ci.yml**: Runs on push/PR to main
+  - Installs dependencies
+  - Lints frontend and backend
+  - Runs tests
+  - Builds frontend and backend binaries
+
+- **release.yml**: Runs on version tags (v*)
+  - Builds plugin
+  - Signs plugin (if GRAFANA_ACCESS_POLICY_TOKEN is set)
+  - Creates GitHub release with zip artifact
+  - Generates build provenance attestation
+
+### Creating a Release
+
+```bash
+# Tag a new version
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+The release workflow will automatically build and publish the release.
 
 ---
 
@@ -124,18 +185,21 @@ Example: `tobiasworkstech-ssh-prometheus-datasource`
 
 ```
 plugin/
+├── .config/
+│   ├── eslint.config.mjs    # ESLint 9 flat config
+│   └── webpack/
 ├── src/
 │   ├── plugin.json          # Manifest (required)
-│   ├── module.ts             # Entry point
-│   ├── components/           # React components
-│   ├── datasource/           # Datasource logic
-│   ├── types/                # TypeScript types
+│   ├── module.ts            # Entry point
+│   ├── components/          # React components
+│   ├── datasource/          # Datasource logic
+│   ├── types/               # TypeScript types
 │   └── img/
-│       └── logo.svg          # Plugin logo
-├── pkg/                      # Go backend (if needed)
+│       └── logo.svg         # Plugin logo
+├── pkg/                     # Go backend (if needed)
 ├── package.json
-├── go.mod                    # If backend
-└── Magefile.go              # If backend
+├── go.mod                   # If backend
+└── Magefile.go             # If backend
 ```
 
 ### Step 4: Build Commands
@@ -256,6 +320,7 @@ pluginid/
 | Backend not starting | Check binary permissions and logs |
 | Validation errors | Run `plugincheck` and fix reported issues |
 | Signing rejected | Review feedback, fix issues, resubmit |
+| ESLint config not found | Ensure `.config/eslint.config.mjs` exists and lint script uses `--config` flag |
 
 ## Resources
 
