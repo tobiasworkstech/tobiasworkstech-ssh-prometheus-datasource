@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output
+plugin/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Debug
+debug
+*.log
+
+# Secrets
+*.pem
+*.key
+id_rsa*

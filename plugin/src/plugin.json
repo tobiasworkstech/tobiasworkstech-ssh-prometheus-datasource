@@ -1,0 +1,38 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "datasource",
+  "name": "SSH Prometheus",
+  "id": "tobiasworkstech-ssh-prometheus-datasource",
+  "backend": true,
+  "executable": "gpx_ssh_prometheus_datasource",
+  "alerting": true,
+  "metrics": true,
+  "info": {
+    "description": "Prometheus datasource that connects through an SSH tunnel for secure access to remote Prometheus instances",
+    "author": {
+      "name": "TobiasWorksTech",
+      "url": "https://github.com/tobiasworkstech"
+    },
+    "keywords": ["prometheus", "ssh", "tunnel", "metrics", "monitoring", "secure", "remote"],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "version": "1.0.0",
+    "updated": "2025-01-27",
+    "links": [
+      {
+        "name": "GitHub",
+        "url": "https://github.com/tobiasworkstech/tobiasworkstech-ssh-prometheus-datasource"
+      },
+      {
+        "name": "License",
+        "url": "https://github.com/tobiasworkstech/tobiasworkstech-ssh-prometheus-datasource/blob/main/LICENSE"
+      }
+    ]
+  },
+  "dependencies": {
+    "grafanaDependency": ">=9.0.0",
+    "plugins": []
+  }
+}

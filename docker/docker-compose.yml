@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   grafana:
-    image: grafana/grafana:10.2.0
+    image: grafana/grafana:11.0.0
     ports:
       - "3000:3000"
     environment:
@@ -14,23 +14,10 @@ services:
       - ./provisioning:/etc/grafana/provisioning
     depends_on:
       - ssh-server
-      - prometheus
     networks:
       - grafana-net
 
-  prometheus:
-    image: prom/prometheus:v2.47.0
-    ports:
-      - "9090:9090"
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.enable-lifecycle'
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    networks:
-      - grafana-net
-
+  # SSH server that hosts Prometheus (simulates remote server)
   ssh-server:
     image: linuxserver/openssh-server:latest
     environment:
@@ -40,12 +27,28 @@ services:
       - PASSWORD_ACCESS=true
       - USER_PASSWORD=testpassword
       - USER_NAME=testuser
+      # Enable TCP forwarding for SSH tunneling
+      - DOCKER_MODS=linuxserver/mods:openssh-server-ssh-tunnel
     ports:
       - "2222:2222"
-    volumes:
-      - ./sshd_config:/etc/ssh/sshd_config:ro
     networks:
       - grafana-net
+
+  # Prometheus runs in ssh-server's network namespace
+  # This makes Prometheus accessible ONLY via localhost:9090 from ssh-server
+  # Exactly simulating the real-world scenario where Prometheus is behind SSH
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    network_mode: "service:ssh-server"
+    depends_on:
+      - ssh-server
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+      - '--web.listen-address=127.0.0.1:9090'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
 
 networks:
   grafana-net:

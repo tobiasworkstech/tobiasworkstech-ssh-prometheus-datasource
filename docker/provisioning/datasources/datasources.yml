@@ -10,6 +10,6 @@ datasources:
       sshPort: "2222"
       sshUsername: testuser
       authMethod: password
-      prometheusUrl: http://prometheus:9090
+      prometheusUrl: http://127.0.0.1:9090
     secureJsonData:
       sshPassword: testpassword
