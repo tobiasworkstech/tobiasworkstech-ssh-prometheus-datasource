@@ -4,7 +4,7 @@ A Grafana datasource plugin that connects to a Prometheus server through an SSH 
 
 ## Status
 
-**Pending Grafana Plugin Signature** - Submitted and awaiting approval. Once approved, install via `grafana-cli plugins install tobiasworkstech-ssh-prometheus-datasource`.
+**Pending Grafana Plugin Signature** - Submitted and awaiting approval. Once approved, install via `grafana-cli plugins install tobiasworkstech-sshprometheus-datasource`.
 
 ## Use Case
 
@@ -77,7 +77,7 @@ Coming soon (pending plugin signature approval).
 4. Enable unsigned plugins in `grafana.ini`:
    ```ini
    [plugins]
-   allow_loading_unsigned_plugins = tobiasworkstech-ssh-prometheus-datasource
+   allow_loading_unsigned_plugins = tobiasworkstech-sshprometheus-datasource
    ```
 
 ## Configuration
@@ -232,7 +232,7 @@ Your plugin ID must follow this format:
 ```
 <organization>-<plugin-name>-<plugin-type>
 ```
-Example: `tobiasworkstech-ssh-prometheus-datasource`
+Example: `tobiasworkstech-sshprometheus-datasource`
 
 ### Required Files
 
@@ -410,7 +410,7 @@ For updates:
 ## Resources
 
 - [Grafana Plugin Documentation](https://grafana.com/developers/plugin-tools/)
-- [Plugin Submission Guide](https://grafana.com/docs/grafana/latest/developers/plugins/publish-a-plugin/)
+- [Plugin Submission Guide](https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin)
 - [Plugin Validator](https://github.com/grafana/plugin-validator)
 - [Grafana Community Forums](https://community.grafana.com/)
 

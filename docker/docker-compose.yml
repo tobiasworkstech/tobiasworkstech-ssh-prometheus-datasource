@@ -5,10 +5,10 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=tobiasworkstech-ssh-prometheus-datasource
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=tobiasworkstech-sshprometheus-datasource
       - GF_LOG_LEVEL=debug
     volumes:
-      - ../plugin/dist:/var/lib/grafana/plugins/tobiasworkstech-ssh-prometheus-datasource
+      - ../dist:/var/lib/grafana/plugins/tobiasworkstech-sshprometheus-datasource
       - ./provisioning:/etc/grafana/provisioning
     depends_on:
       - ssh-server

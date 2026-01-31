@@ -14,9 +14,6 @@ jobs:
       id-token: write
       attestations: write
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: plugin
     steps:
       - uses: actions/checkout@v4
 
@@ -24,12 +21,12 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: plugin/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23'
-          cache-dependency-path: plugin/go.sum
+          cache-dependency-path: go.sum
 
       - name: Install dependencies
         run: npm ci
@@ -40,11 +37,11 @@ jobs:
       - name: Build backend
         run: |
           go mod download
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_ssh_prometheus_datasource_linux_amd64 ./pkg
-          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_ssh_prometheus_datasource_linux_arm64 ./pkg
-          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_ssh_prometheus_datasource_darwin_amd64 ./pkg
-          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_ssh_prometheus_datasource_darwin_arm64 ./pkg
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_ssh_prometheus_datasource_windows_amd64.exe ./pkg
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_linux_amd64 ./pkg
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_linux_arm64 ./pkg
+          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_darwin_amd64 ./pkg
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_darwin_arm64 ./pkg
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_windows_amd64.exe ./pkg
 
       - name: Sign plugin
         id: sign
@@ -55,27 +52,26 @@ jobs:
 
       - name: Copy files to dist
         run: |
-          cp ../LICENSE dist/ 2>/dev/null || true
-          cp ../README.md dist/ 2>/dev/null || true
-          cp ../CHANGELOG.md dist/ 2>/dev/null || true
+          cp LICENSE dist/ 2>/dev/null || true
+          cp README.md dist/ 2>/dev/null || true
+          cp CHANGELOG.md dist/ 2>/dev/null || true
 
       - name: Package plugin
-        working-directory: .
         run: |
-          PLUGIN_ID="tobiasworkstech-ssh-prometheus-datasource"
+          PLUGIN_ID="tobiasworkstech-sshprometheus-datasource"
           VERSION="${GITHUB_REF#refs/tags/v}"
-          mv plugin/dist "${PLUGIN_ID}"
+          mv dist "${PLUGIN_ID}"
           zip -r "${PLUGIN_ID}-${VERSION}.zip" "${PLUGIN_ID}"
 
       - name: Generate build provenance attestation
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: tobiasworkstech-ssh-prometheus-datasource-*.zip
+          subject-path: tobiasworkstech-sshprometheus-datasource-*.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: tobiasworkstech-ssh-prometheus-datasource-*.zip
+          files: tobiasworkstech-sshprometheus-datasource-*.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

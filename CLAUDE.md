@@ -21,24 +21,24 @@ Grafana → Plugin Backend (Go) → SSH Tunnel → Remote Prometheus
 ├── .github/workflows/     # CI/CD workflows
 │   ├── ci.yml            # Build and lint on push/PR
 │   └── release.yml       # Build, sign, and release on tags
+├── .config/              # Build and lint configuration
+│   ├── eslint.config.mjs
+│   └── webpack/
 ├── docker/               # Development environment
 │   ├── docker-compose.yml
 │   ├── prometheus.yml
 │   └── provisioning/
-├── plugin/               # Plugin source code
-│   ├── .config/          # Build and lint configuration
-│   │   ├── eslint.config.mjs
-│   │   └── webpack/
-│   ├── src/              # Frontend React/TypeScript
-│   │   ├── components/
-│   │   ├── datasource/
-│   │   ├── types/
-│   │   └── plugin.json
-│   ├── pkg/              # Backend Go code
-│   │   ├── plugin/
-│   │   └── ssh/
-│   ├── package.json
-│   └── go.mod
+├── src/                  # Frontend React/TypeScript
+│   ├── components/
+│   ├── datasource/
+│   ├── types/
+│   ├── img/
+│   └── plugin.json
+├── pkg/                  # Backend Go code
+│   ├── plugin/
+│   └── ssh/
+├── package.json
+├── go.mod
 ├── CLAUDE.md             # This file
 ├── README.md             # User documentation
 └── CHANGELOG.md          # Version history
@@ -56,22 +56,21 @@ Grafana → Plugin Backend (Go) → SSH Tunnel → Remote Prometheus
 ### Building
 
 ```bash
-# Frontend
-cd plugin
+# Install dependencies
 npm install
+
+# Build frontend
 npm run build
 
-# Backend
-cd plugin
+# Build backend
 go mod tidy
-mage -v build:linux  # or build:darwin, build:windows
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_linux_amd64 ./pkg
 ```
 
 ### Development Mode
 
 ```bash
 # Terminal 1: Frontend watch
-cd plugin
 npm run dev
 
 # Terminal 2: Start dev environment
@@ -95,7 +94,6 @@ docker compose up
 ### Linting
 
 ```bash
-cd plugin
 npm run lint        # Check for issues
 npm run lint:fix    # Auto-fix issues
 ```
@@ -106,14 +104,14 @@ ESLint uses flat config format (ESLint 9+) at `.config/eslint.config.mjs`.
 
 | File | Purpose |
 |------|---------|
-| `plugin/src/plugin.json` | Plugin manifest |
-| `plugin/src/types/index.ts` | TypeScript interfaces |
-| `plugin/src/components/ConfigEditor.tsx` | SSH config UI |
-| `plugin/src/components/QueryEditor.tsx` | PromQL editor |
-| `plugin/src/datasource/datasource.ts` | Frontend datasource |
-| `plugin/pkg/plugin/datasource.go` | Backend with SSH tunnel + proxy |
-| `plugin/pkg/ssh/tunnel.go` | SSH connection management |
-| `plugin/.config/eslint.config.mjs` | ESLint flat config |
+| `src/plugin.json` | Plugin manifest |
+| `src/types/index.ts` | TypeScript interfaces |
+| `src/components/ConfigEditor.tsx` | SSH config UI |
+| `src/components/QueryEditor.tsx` | PromQL editor |
+| `src/datasource/datasource.ts` | Frontend datasource |
+| `pkg/plugin/datasource.go` | Backend with SSH tunnel + proxy |
+| `pkg/ssh/tunnel.go` | SSH connection management |
+| `.config/eslint.config.mjs` | ESLint flat config |
 
 ## Configuration Options
 
@@ -135,7 +133,7 @@ ESLint uses flat config format (ESLint 9+) at `.config/eslint.config.mjs`.
 
 - **ci.yml**: Runs on push/PR to main
   - Installs dependencies
-  - Lints frontend and backend
+  - Lints frontend
   - Runs tests
   - Builds frontend and backend binaries
 
@@ -154,6 +152,10 @@ git push origin v1.0.1
 ```
 
 The release workflow will automatically build and publish the release.
+
+## Plugin ID
+
+The plugin ID is `tobiasworkstech-sshprometheus-datasource` (must follow pattern `org-name-type`).
 
 ---
 
@@ -176,15 +178,16 @@ Choose:
 ### Step 2: Plugin ID Format
 
 ```
-<organization>-<plugin-name>-<plugin-type>
+<organization>-<name>-<type>
 ```
 
-Example: `tobiasworkstech-ssh-prometheus-datasource`
+Example: `tobiasworkstech-sshprometheus-datasource`
+
+**Important**: Only 3 segments allowed (org-name-type).
 
 ### Step 3: Essential Files
 
 ```
-plugin/
 ├── .config/
 │   ├── eslint.config.mjs    # ESLint 9 flat config
 │   └── webpack/
@@ -198,8 +201,7 @@ plugin/
 │       └── logo.svg         # Plugin logo
 ├── pkg/                     # Go backend (if needed)
 ├── package.json
-├── go.mod                   # If backend
-└── Magefile.go             # If backend
+└── go.mod                   # If backend
 ```
 
 ### Step 4: Build Commands
@@ -212,9 +214,7 @@ npm run dev        # watch mode
 
 # Backend
 go mod tidy
-mage -v build:linux
-mage -v build:darwin
-mage -v build:windows
+go build -o dist/gpx_name_linux_amd64 ./pkg
 ```
 
 ## Plugin Signing Process
@@ -234,6 +234,7 @@ mage -v build:windows
 3. **Complete plugin.json** with all metadata
 4. **README.md** with documentation
 5. **Backend binaries** for linux/amd64, darwin/amd64, windows/amd64
+6. **Screenshots** in plugin.json for catalog display
 
 ### Submission Process
 
@@ -254,7 +255,7 @@ mage -v build:windows
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
   "name": "Plugin Display Name",
-  "id": "org-name-type",
+  "id": "org-name-datasource",
   "backend": true,
   "executable": "gpx_name",
   "alerting": true,
@@ -270,6 +271,12 @@ mage -v build:windows
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
+    "screenshots": [
+      {
+        "name": "Screenshot Name",
+        "path": "img/screenshot.png"
+      }
+    ],
     "version": "1.0.0",
     "updated": "2024-01-01"
   },
@@ -290,15 +297,20 @@ pluginid/
 ├── gpx_name_darwin_amd64
 ├── gpx_name_windows_amd64.exe
 ├── img/
-│   └── logo.svg
+│   ├── logo.svg
+│   └── screenshot.png
 └── README.md
 ```
 
-### Review Timeline
+### Common Validation Errors
 
-- Automated checks: Minutes
-- Manual review: Days to weeks
-- Updates: Usually faster review
+| Error | Solution |
+|-------|----------|
+| `invalid-metadata` | Plugin ID must match pattern `org-name-type` (3 segments) |
+| `go-mod-not-found` | Place go.mod at repository root, not in subdirectory |
+| `packagejson-not-found` | Place package.json at repository root |
+| `code-rules-access-os-environment` | Don't include Magefile.go in source (uses os.Environ) |
+| `js-map-no-match` | Source code must match built assets exactly |
 
 ### After Approval
 
@@ -312,19 +324,9 @@ pluginid/
 2. Create new GitHub release
 3. Submit new version via Grafana.com
 
-## Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| Plugin not loading | Check `allow_loading_unsigned_plugins` in grafana.ini |
-| Backend not starting | Check binary permissions and logs |
-| Validation errors | Run `plugincheck` and fix reported issues |
-| Signing rejected | Review feedback, fix issues, resubmit |
-| ESLint config not found | Ensure `.config/eslint.config.mjs` exists and lint script uses `--config` flag |
-
 ## Resources
 
 - [Plugin Tools](https://grafana.com/developers/plugin-tools/)
 - [Plugin Validator](https://github.com/grafana/plugin-validator)
-- [Publish Guide](https://grafana.com/docs/grafana/latest/developers/plugins/publish-a-plugin/)
+- [Publish Guide](https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin)
 - [Community Forums](https://community.grafana.com/)

@@ -1,6 +1,6 @@
 {
-  "name": "tobiasworkstech-ssh-prometheus-datasource",
-  "version": "1.0.0",
+  "name": "tobiasworkstech-sshprometheus-datasource",
+  "version": "1.0.1",
   "description": "Prometheus datasource that connects through an SSH tunnel for secure access to remote Prometheus instances",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint --config .config/eslint.config.mjs --cache src",
     "lint:fix": "npm run lint -- --fix",
-    "server": "docker-compose -f ../docker/docker-compose.yml up",
+    "server": "docker compose -f docker/docker-compose.yml up",
     "sign": "npx @grafana/sign-plugin@latest"
   },
   "author": "TobiasWorksTech",

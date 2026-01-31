@@ -2,9 +2,9 @@
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
   "name": "SSH Prometheus",
-  "id": "tobiasworkstech-ssh-prometheus-datasource",
+  "id": "tobiasworkstech-sshprometheus-datasource",
   "backend": true,
-  "executable": "gpx_ssh_prometheus_datasource",
+  "executable": "gpx_sshprometheus_datasource",
   "alerting": true,
   "metrics": true,
   "info": {
@@ -18,8 +18,18 @@
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "version": "1.0.0",
-    "updated": "2025-01-27",
+    "screenshots": [
+      {
+        "name": "Query Editor",
+        "path": "img/screenshot-query.png"
+      },
+      {
+        "name": "Configuration",
+        "path": "img/screenshot-config.png"
+      }
+    ],
+    "version": "1.0.1",
+    "updated": "2026-01-27",
     "links": [
       {
         "name": "GitHub",
