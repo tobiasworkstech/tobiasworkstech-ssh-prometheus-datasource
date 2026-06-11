@@ -114,7 +114,7 @@ const config = async (env: Record<string, unknown>): Promise<Configuration> => {
           rules: [
             {
               search: /%VERSION%/g,
-              replace: pluginJson.info?.version || '1.0.0',
+              replace: require('../../package.json').version,
             },
             {
               search: /%TODAY%/g,
