@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
@@ -102,15 +103,23 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 		return nil, fmt.Errorf("failed to create TLS config: %w", err)
 	}
 
+	timeouts := httpclient.DefaultTimeoutOptions
+	timeouts.Timeout = time.Duration(jsonData.Timeout) * time.Second
+
+	httpClient, err := httpclient.New(httpclient.Options{
+		Timeouts: &timeouts,
+		ConfigureTransport: func(_ httpclient.Options, transport *http.Transport) {
+			transport.TLSClientConfig = tlsConfig
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create HTTP client: %w", err)
+	}
+
 	ds := &Datasource{
 		settings:   jsonData,
 		secureData: secureData,
-		httpClient: &http.Client{
-			Timeout: time.Duration(jsonData.Timeout) * time.Second,
-			Transport: &http.Transport{
-				TLSClientConfig: tlsConfig,
-			},
-		},
+		httpClient: httpClient,
 	}
 
 	return ds, nil
@@ -208,7 +217,7 @@ func (d *Datasource) ensureTunnel(ctx context.Context) error {
 	}
 
 	d.tunnel = tunnel
-	log.DefaultLogger.Info("SSH tunnel established", "host", d.settings.SSHHost)
+	log.DefaultLogger.Debug("SSH tunnel established")
 	return nil
 }
 

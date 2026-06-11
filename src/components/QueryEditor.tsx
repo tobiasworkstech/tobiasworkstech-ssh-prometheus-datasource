@@ -27,85 +27,94 @@ const getStyles = (theme: GrafanaTheme2) => ({
   container: css`
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: ${theme.spacing(1)};
   `,
   topRow: css`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: ${theme.spacing(1)};
   `,
   leftSection: css`
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: ${theme.spacing(1)};
   `,
   builderRow: css`
     display: flex;
     align-items: flex-start;
-    gap: 16px;
+    gap: ${theme.spacing(2)};
     flex-wrap: wrap;
   `,
   metricSection: css`
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: ${theme.spacing(0.5)};
   `,
   labelSection: css`
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: ${theme.spacing(0.5)};
     flex: 1;
   `,
   sectionLabel: css`
-    font-size: 12px;
+    font-size: ${theme.typography.bodySmall.fontSize};
     color: ${theme.colors.text.secondary};
-    font-weight: 500;
+    font-weight: ${theme.typography.fontWeightMedium};
   `,
   labelFilters: css`
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: ${theme.spacing(0.5)};
     flex-wrap: wrap;
   `,
   labelFilter: css`
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: ${theme.spacing(0.5)};
     background: ${theme.colors.background.secondary};
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: ${theme.spacing(0.5, 1)};
+    border-radius: ${theme.shape.borderRadius(1)};
   `,
   operationsButton: css`
-    margin-top: 8px;
+    margin-top: ${theme.spacing(1)};
   `,
   optionsRow: css`
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: ${theme.spacing(2)};
     flex-wrap: wrap;
-    padding: 8px 0;
+    padding: ${theme.spacing(1, 0)};
+  `,
+  optionsTitle: css`
+    font-weight: ${theme.typography.fontWeightMedium};
+  `,
+  optionsContent: css`
+    display: flex;
+    gap: ${theme.spacing(2)};
+    flex-wrap: wrap;
+    padding: ${theme.spacing(1, 0)};
   `,
   optionItem: css`
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 12px;
+    gap: ${theme.spacing(0.5)};
+    font-size: ${theme.typography.bodySmall.fontSize};
     color: ${theme.colors.text.secondary};
   `,
   optionLabel: css`
-    font-weight: 500;
+    font-weight: ${theme.typography.fontWeightMedium};
   `,
   codeEditor: css`
     width: 100%;
-    font-family: monospace;
-    font-size: 14px;
-    padding: 8px 12px;
+    font-family: ${theme.typography.fontFamilyMonospace};
+    font-size: ${theme.typography.body.fontSize};
+    padding: ${theme.spacing(1, 1.5)};
     border: 1px solid ${theme.colors.border.weak};
-    border-radius: 4px;
+    border-radius: ${theme.shape.borderRadius(1)};
     background: ${theme.colors.background.primary};
     color: ${theme.colors.text.primary};
-    min-height: 60px;
+    min-height: ${theme.spacing(7.5)};
     resize: vertical;
     &:focus {
       outline: none;
@@ -438,7 +447,7 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
       <Collapse
         label={
           <div className={styles.optionsRow}>
-            <span style={{ fontWeight: 500 }}>Options</span>
+            <span className={styles.optionsTitle}>Options</span>
             <span className={styles.optionItem}>
               <span className={styles.optionLabel}>Legend:</span> {currentQuery.legendFormat || 'Auto'}
             </span>
@@ -457,7 +466,7 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
         onToggle={() => setOptionsOpen(!optionsOpen)}
         collapsible
       >
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', padding: '8px 0' }}>
+        <div className={styles.optionsContent}>
           <InlineField label="Legend" labelWidth={12}>
             <Input
               width={25}

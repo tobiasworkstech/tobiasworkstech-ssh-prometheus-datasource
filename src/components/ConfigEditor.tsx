@@ -9,8 +9,10 @@ import {
   Select,
   Switch,
   InlineFieldRow,
+  useStyles2,
 } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps, SelectableValue } from '@grafana/data';
+import { css } from '@emotion/css';
 import {
   SSHPrometheusDataSourceOptions,
   SSHPrometheusSecureJsonData,
@@ -20,6 +22,13 @@ import {
 
 interface Props
   extends DataSourcePluginOptionsEditorProps<SSHPrometheusDataSourceOptions, SSHPrometheusSecureJsonData> {}
+
+const getStyles = () => ({
+  column: css`
+    display: flex;
+    flex-direction: column;
+  `,
+});
 
 const sshAuthMethodOptions = [
   { label: 'Password', value: 'password' as AuthMethod },
@@ -38,6 +47,7 @@ const httpMethodOptions: Array<SelectableValue<'GET' | 'POST'>> = [
 ];
 
 export function ConfigEditor(props: Props) {
+  const styles = useStyles2(getStyles);
   const { onOptionsChange, options } = props;
   const { jsonData, secureJsonFields, secureJsonData } = options;
 
@@ -149,7 +159,7 @@ export function ConfigEditor(props: Props) {
               labelWidth={20}
               tooltip="PEM-encoded private key (e.g., contents of ~/.ssh/id_rsa)"
             >
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className={styles.column}>
                 {secureJsonFields?.sshPrivateKey ? (
                   <Input
                     width={40}
@@ -327,7 +337,7 @@ export function ConfigEditor(props: Props) {
 
         {jsonData.tlsWithCACert && (
           <InlineField label="CA Certificate" labelWidth={20} tooltip="PEM-encoded CA certificate">
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className={styles.column}>
               {secureJsonFields?.tlsCACert ? (
                 <Input
                   width={40}
@@ -368,7 +378,7 @@ export function ConfigEditor(props: Props) {
         {jsonData.tlsWithClientCert && (
           <>
             <InlineField label="Client Certificate" labelWidth={20} tooltip="PEM-encoded client certificate">
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className={styles.column}>
                 {secureJsonFields?.tlsClientCert ? (
                   <Input
                     width={40}
@@ -399,7 +409,7 @@ export function ConfigEditor(props: Props) {
             </InlineField>
 
             <InlineField label="Client Key" labelWidth={20} tooltip="PEM-encoded client private key">
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className={styles.column}>
                 {secureJsonFields?.tlsClientKey ? (
                   <Input
                     width={40}
