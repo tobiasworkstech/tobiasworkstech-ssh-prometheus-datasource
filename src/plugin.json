@@ -18,8 +18,8 @@
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "version": "1.0.1",
-    "updated": "2026-01-27",
+    "version": "%VERSION%",
+    "updated": "%TODAY%",
     "links": [
       {
         "name": "GitHub",
