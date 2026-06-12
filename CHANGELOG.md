@@ -2,6 +2,24 @@
 
 All notable changes to the Grafana SSH Prometheus Datasource plugin will be documented in this file.
 
+## [1.0.3] - 2026-06-11
+
+### Added
+
+- Screenshots in `plugin.json` for the Grafana plugin catalog (datasource configuration, query editor, dashboard)
+- Provisioned example dashboard in the Docker development environment
+
+### Fixed
+
+- Docker provisioning used the old 4-segment plugin ID, so the dev datasource never loaded
+
+## [1.0.2] - 2026-06-10
+
+### Fixed
+
+- Resolve `%VERSION%`/`%TODAY%` placeholders in `plugin.json` from `package.json` during build
+- Addressed Grafana plugin review feedback
+
 ## [1.0.1] - 2026-01-27
 
 ### Changed

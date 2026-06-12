@@ -18,6 +18,20 @@
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
+    "screenshots": [
+      {
+        "name": "Dashboard with metrics queried through an SSH tunnel",
+        "path": "img/dashboard.png"
+      },
+      {
+        "name": "Datasource configuration (SSH connection and Prometheus settings)",
+        "path": "img/config-editor.png"
+      },
+      {
+        "name": "PromQL query editor",
+        "path": "img/query-editor.png"
+      }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%",
     "links": [
