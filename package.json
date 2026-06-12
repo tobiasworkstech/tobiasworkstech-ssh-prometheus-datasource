@@ -1,6 +1,6 @@
 {
   "name": "tobiasworkstech-sshprometheus-datasource",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Prometheus datasource that connects through an SSH tunnel for secure access to remote Prometheus instances",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
