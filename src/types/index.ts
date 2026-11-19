@@ -26,6 +26,10 @@ export interface SSHPrometheusDataSourceOptions extends DataSourceJsonData {
   sshUsername: string;
   authMethod: AuthMethod;
 
+  // SSH host key verification
+  sshHostKey?: string;
+  sshSkipHostKeyVerify?: boolean;
+
   // Prometheus Connection
   prometheusUrl: string;
 

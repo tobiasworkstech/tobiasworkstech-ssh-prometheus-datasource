@@ -19,8 +19,12 @@ type TunnelConfig struct {
 	SSHPassword      string
 	SSHPrivateKey    string
 	SSHKeyPassphrase string
-	RemoteHost       string
-	RemotePort       int
+	// HostKeys is the trusted host key list (see parseHostKeys for accepted formats).
+	HostKeys string
+	// SkipHostKeyVerify disables host key verification. Insecure; explicit opt-in only.
+	SkipHostKeyVerify bool
+	RemoteHost        string
+	RemotePort        int
 }
 
 type Tunnel struct {
@@ -40,10 +44,12 @@ func NewTunnel(config TunnelConfig) (*Tunnel, error) {
 	}
 
 	sshConfig := &ssh.ClientConfig{
-		User:            config.SSHUsername,
-		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         30 * time.Second,
+		User:    config.SSHUsername,
+		Auth:    authMethods,
+		Timeout: 30 * time.Second,
+	}
+	if err := applyHostKeyPolicy(sshConfig, config); err != nil {
+		return nil, err
 	}
 
 	addr := fmt.Sprintf("%s:%d", config.SSHHost, config.SSHPort)
@@ -115,10 +121,12 @@ func TestConnection(config TunnelConfig) error {
 	}
 
 	sshConfig := &ssh.ClientConfig{
-		User:            config.SSHUsername,
-		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         10 * time.Second,
+		User:    config.SSHUsername,
+		Auth:    authMethods,
+		Timeout: 10 * time.Second,
+	}
+	if err := applyHostKeyPolicy(sshConfig, config); err != nil {
+		return err
 	}
 
 	addr := fmt.Sprintf("%s:%d", config.SSHHost, config.SSHPort)

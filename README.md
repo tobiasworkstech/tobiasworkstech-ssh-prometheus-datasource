@@ -59,6 +59,7 @@ This plugin is useful when:
 
 - SSH tunnel to remote Prometheus servers
 - Support for password and SSH key authentication
+- SSH host key verification (pinned keys or fingerprints) to prevent man-in-the-middle attacks
 - Full Prometheus query support (range queries, instant queries)
 - Variable support with `label_values()`, `label_names()`, `metrics()`
 - Alerting support
@@ -89,6 +90,26 @@ Coming soon (pending plugin signature approval).
 | SSH Host | Hostname or IP of the SSH server |
 | SSH Port | SSH port (default: 22) |
 | SSH Username | SSH username for authentication |
+| SSH Host Key | Trusted host key(s) of the SSH server, one per line (see below) |
+| Skip Host Key Verify | Accept any host key. Insecure, for testing only (default: off) |
+
+### SSH Host Key Verification
+
+Host key verification is **on by default**. Grafana refuses to connect unless the SSH server presents a key listed in **SSH Host Key**. Each line may be:
+
+- a `known_hosts` / `ssh-keyscan` line: `[prom.example.com]:22 ssh-ed25519 AAAAC3Nza...`
+- a public key: `ssh-ed25519 AAAAC3Nza... root@prom`
+- a SHA256 fingerprint: `SHA256:j16RCeAHE9uXxG6P+S2kgIRwoazky+qd/WDStiigbu0`
+
+Blank lines and `#` comments are ignored. To get the keys, run the following and compare the fingerprints (`ssh-keygen -lf`) with the server's own (`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` on the server):
+
+```bash
+ssh-keyscan -p 22 prom.example.com
+```
+
+If **SSH Host Key** is empty, **Save & test** fails and shows the key and fingerprint the server presented, so you can verify and paste it.
+
+Prefer full key lines over fingerprints. With full keys, the plugin asks the server for a key of the pinned type. A fingerprint does not reveal its key type, so it must match the key the server presents by default (the one shown by Save & test).
 
 ### Authentication
 
@@ -165,6 +186,7 @@ The dev environment includes a pre-configured SSH server:
 | SSH Port | 2222 |
 | SSH Username | testuser |
 | SSH Password | testpassword |
+| Skip Host Key Verify | on (the dev SSH server generates a new host key each time it is recreated) |
 | Remote Prometheus URL | http://prometheus:9090 |
 
 ### Frontend Watch Mode

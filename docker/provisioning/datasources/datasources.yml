@@ -11,6 +11,9 @@ datasources:
       sshPort: "2222"
       sshUsername: testuser
       authMethod: password
+      # Dev only: the ssh-server container generates a new host key on every recreate.
+      # In production, pin the key with sshHostKey (output of `ssh-keyscan -p <port> <host>`).
+      sshSkipHostKeyVerify: true
       prometheusUrl: http://127.0.0.1:9090
     secureJsonData:
       sshPassword: testpassword

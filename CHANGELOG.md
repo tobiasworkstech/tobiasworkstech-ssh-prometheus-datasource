@@ -2,6 +2,19 @@
 
 All notable changes to the Grafana SSH Prometheus Datasource plugin will be documented in this file.
 
+## [1.1.0] - 2026-11-19
+
+### Added
+
+- **SSH host key verification.** New **SSH Host Key** setting accepts `known_hosts`/`ssh-keyscan` lines, public keys, or SHA256 fingerprints (one or more). The plugin negotiates the pinned key type, so pinning e.g. an ed25519 key works even if the server prefers ECDSA.
+- **Skip Host Key Verify** switch as an explicit, insecure opt-out (shows a warning in the config editor)
+- Unit tests and an in-process SSH server integration test for host key verification
+
+### Changed
+
+- **Behaviour change:** host key verification is now on by default. Existing datasources without a host key fail **Save & test** with a message showing the key and fingerprint the server presented. Verify it, then paste it into **SSH Host Key** (or enable **Skip Host Key Verify**).
+- The `test-ssh` resource builds its JSON response with `encoding/json`, so error messages containing quotes no longer break the response
+
 ## [1.0.4] - 2026-11-19
 
 ### Changed

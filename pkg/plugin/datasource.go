@@ -31,6 +31,10 @@ type SSHPrometheusSettings struct {
 	SSHUsername string `json:"sshUsername"`
 	AuthMethod  string `json:"authMethod"`
 
+	// SSH host key verification
+	SSHHostKey           string `json:"sshHostKey"`
+	SSHSkipHostKeyVerify bool   `json:"sshSkipHostKeyVerify"`
+
 	// Prometheus Connection
 	PrometheusURL string `json:"prometheusUrl"`
 
@@ -183,19 +187,7 @@ func (d *Datasource) ensureTunnel(ctx context.Context) error {
 		d.tunnel = nil
 	}
 
-	config := ssh.TunnelConfig{
-		SSHHost:     d.settings.SSHHost,
-		SSHPort:     d.settings.SSHPort,
-		SSHUsername: d.settings.SSHUsername,
-		AuthMethod:  d.settings.AuthMethod,
-	}
-
-	if d.settings.AuthMethod == "password" {
-		config.SSHPassword = d.secureData["sshPassword"]
-	} else {
-		config.SSHPrivateKey = d.secureData["sshPrivateKey"]
-		config.SSHKeyPassphrase = d.secureData["sshKeyPassphrase"]
-	}
+	config := d.sshConfig()
 
 	promURL, err := url.Parse(d.settings.PrometheusURL)
 	if err != nil {
@@ -538,13 +530,34 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 }
 
 func (d *Datasource) handleTestSSH(ctx context.Context, sender backend.CallResourceResponseSender) error {
+	// Test SSH connection only (without creating a tunnel)
+	result := map[string]string{"status": "ok", "message": "SSH connection successful"}
+	if err := ssh.TestConnection(d.sshConfig()); err != nil {
+		result = map[string]string{"status": "error", "message": "SSH connection failed: " + err.Error()}
+	}
+
+	body, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	return sender.Send(&backend.CallResourceResponse{
+		Status: http.StatusOK,
+		Headers: map[string][]string{
+			"Content-Type": {"application/json"},
+		},
+		Body: body,
+	})
+}
+
+// sshConfig builds the SSH connection settings shared by the tunnel and the SSH-only test.
+func (d *Datasource) sshConfig() ssh.TunnelConfig {
 	config := ssh.TunnelConfig{
-		SSHHost:     d.settings.SSHHost,
-		SSHPort:     d.settings.SSHPort,
-		SSHUsername: d.settings.SSHUsername,
-		AuthMethod:  d.settings.AuthMethod,
-		RemoteHost:  "localhost",
-		RemotePort:  22,
+		SSHHost:           d.settings.SSHHost,
+		SSHPort:           d.settings.SSHPort,
+		SSHUsername:       d.settings.SSHUsername,
+		AuthMethod:        d.settings.AuthMethod,
+		HostKeys:          d.settings.SSHHostKey,
+		SkipHostKeyVerify: d.settings.SSHSkipHostKeyVerify,
 	}
 
 	if d.settings.AuthMethod == "password" {
@@ -553,26 +566,7 @@ func (d *Datasource) handleTestSSH(ctx context.Context, sender backend.CallResou
 		config.SSHPrivateKey = d.secureData["sshPrivateKey"]
 		config.SSHKeyPassphrase = d.secureData["sshKeyPassphrase"]
 	}
-
-	// Test SSH connection only (without creating a tunnel)
-	err := ssh.TestConnection(config)
-	if err != nil {
-		return sender.Send(&backend.CallResourceResponse{
-			Status: http.StatusOK,
-			Headers: map[string][]string{
-				"Content-Type": {"application/json"},
-			},
-			Body: []byte(fmt.Sprintf(`{"status": "error", "message": "SSH connection failed: %s"}`, err.Error())),
-		})
-	}
-
-	return sender.Send(&backend.CallResourceResponse{
-		Status: http.StatusOK,
-		Headers: map[string][]string{
-			"Content-Type": {"application/json"},
-		},
-		Body: []byte(`{"status": "ok", "message": "SSH connection successful"}`),
-	})
+	return config
 }
 
 func (d *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {

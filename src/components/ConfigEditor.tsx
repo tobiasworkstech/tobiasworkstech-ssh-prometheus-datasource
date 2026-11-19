@@ -9,9 +9,10 @@ import {
   Select,
   Switch,
   InlineFieldRow,
+  Alert,
   useStyles2,
 } from '@grafana/ui';
-import { DataSourcePluginOptionsEditorProps, SelectableValue } from '@grafana/data';
+import { DataSourcePluginOptionsEditorProps, GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { css } from '@emotion/css';
 import {
   SSHPrometheusDataSourceOptions,
@@ -23,11 +24,19 @@ import {
 interface Props
   extends DataSourcePluginOptionsEditorProps<SSHPrometheusDataSourceOptions, SSHPrometheusSecureJsonData> {}
 
-const getStyles = () => ({
+const getStyles = (theme: GrafanaTheme2) => ({
   column: css`
     display: flex;
     flex-direction: column;
   `,
+  help: css({
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.bodySmall.fontSize,
+    marginTop: theme.spacing(0.5),
+  }),
+  code: css({
+    fontFamily: theme.typography.fontFamilyMonospace,
+  }),
 });
 
 const sshAuthMethodOptions = [
@@ -127,6 +136,48 @@ export function ConfigEditor(props: Props) {
             placeholder="root"
           />
         </InlineField>
+
+        <InlineField
+          label="SSH Host Key"
+          labelWidth={20}
+          disabled={jsonData.sshSkipHostKeyVerify || false}
+          tooltip="Trusted public host key(s) of the SSH server, one per line. Accepts known_hosts / ssh-keyscan lines, public keys (ssh-ed25519 AAAA...), or SHA256 fingerprints. Prefer full keys: a fingerprint must match the key type the server offers by default."
+        >
+          <div className={styles.column}>
+            <TextArea
+              cols={60}
+              rows={3}
+              value={jsonData.sshHostKey || ''}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onJsonDataChange('sshHostKey', e.target.value)}
+              placeholder="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA...  or  SHA256:..."
+            />
+            <div className={styles.help}>
+              Get it with{' '}
+              <span className={styles.code}>
+                ssh-keyscan -p {jsonData.sshPort || 22} {jsonData.sshHost || '<host>'}
+              </span>{' '}
+              and verify the fingerprint out of band. If left empty, Save &amp; test shows the key the server presented.
+            </div>
+          </div>
+        </InlineField>
+
+        <InlineField
+          label="Skip Host Key Verify"
+          labelWidth={20}
+          tooltip="Accept any SSH host key. Insecure: exposes the connection to man-in-the-middle attacks."
+        >
+          <Switch
+            value={jsonData.sshSkipHostKeyVerify || false}
+            onChange={(e) => onJsonDataChange('sshSkipHostKeyVerify', e.currentTarget.checked)}
+          />
+        </InlineField>
+
+        {jsonData.sshSkipHostKeyVerify && (
+          <Alert severity="warning" title="SSH host key verification is disabled">
+            Grafana will connect to any server answering at this address, including one impersonating it. Only use this
+            for testing.
+          </Alert>
+        )}
       </FieldSet>
 
       {/* SSH Authentication Section */}
