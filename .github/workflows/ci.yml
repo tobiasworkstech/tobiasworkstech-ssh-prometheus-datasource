@@ -3,47 +3,120 @@ name: CI
 on:
   push:
     branches:
+      - master
       - main
   pull_request:
     branches:
+      - master
       - main
-
-permissions: read-all
 
 jobs:
   build:
+    name: Build, lint and unit tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    outputs:
+      plugin-id: ${{ steps.metadata.outputs.plugin-id }}
+      plugin-version: ${{ steps.metadata.outputs.plugin-version }}
+      has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
+    env:
+      GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
         with:
-          node-version: '20'
+          persist-credentials: false
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v6.2.0
+        with:
+          node-version: '22'
           cache: 'npm'
-          cache-dependency-path: package-lock.json
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-          cache-dependency-path: go.sum
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint frontend
+      - name: Check types
+        run: npm run typecheck
+      - name: Lint
         run: npm run lint
-
-      - name: Test frontend
+      - name: Unit tests
         run: npm run test:ci
-
       - name: Build frontend
         run: npm run build
 
-      - name: Build backend
+      - name: Check for backend
+        id: check-for-backend
         run: |
-          go mod download
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_linux_amd64 ./pkg
-          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_linux_arm64 ./pkg
-          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_darwin_amd64 ./pkg
-          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_darwin_arm64 ./pkg
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_windows_amd64.exe ./pkg
+          if [ -f "Magefile.go" ]
+          then
+            echo "has-backend=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Go environment
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+
+      - name: Test backend
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b # v3.1.0
+        with:
+          version: latest
+          args: coverage
+
+      - name: Build backend
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b # v3.1.0
+        with:
+          version: latest
+          args: buildAll
+
+      - name: Sign plugin
+        run: npm run sign
+        if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' && github.event_name != 'pull_request' }}
+
+      - name: Get plugin metadata
+        id: metadata
+        run: |
+          sudo apt-get install jq
+
+          export GRAFANA_PLUGIN_ID=$(cat dist/plugin.json | jq -r .id)
+          export GRAFANA_PLUGIN_VERSION=$(cat dist/plugin.json | jq -r .info.version)
+          export GRAFANA_PLUGIN_ARTIFACT=${GRAFANA_PLUGIN_ID}-${GRAFANA_PLUGIN_VERSION}.zip
+
+          echo "plugin-id=${GRAFANA_PLUGIN_ID}" >> $GITHUB_OUTPUT
+          echo "plugin-version=${GRAFANA_PLUGIN_VERSION}" >> $GITHUB_OUTPUT
+          echo "archive=${GRAFANA_PLUGIN_ARTIFACT}" >> $GITHUB_OUTPUT
+
+      - name: Package plugin
+        id: package-plugin
+        run: |
+          mv dist ${PLUGIN_ID}
+          zip ${ARCHIVE} ${PLUGIN_ID} -r
+        env:
+          ARCHIVE: ${{ steps.metadata.outputs.archive }}
+          PLUGIN_ID: ${{ steps.metadata.outputs.plugin-id }}
+
+      - name: Generate build provenance attestation
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ steps.metadata.outputs.archive }}
+
+      - name: Check plugin.json
+        run: |
+          docker run --pull=always \
+            -v $PWD/${ARCHIVE}:/archive.zip \
+            grafana/plugin-validator-cli -analyzer=metadatavalid /archive.zip
+        env:
+          ARCHIVE: ${{ steps.metadata.outputs.archive }}
+
+      - name: Archive Build
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ steps.metadata.outputs.plugin-id }}-${{ steps.metadata.outputs.plugin-version }}
+          path: ${{ steps.metadata.outputs.plugin-id }}
+          retention-days: 5

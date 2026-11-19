@@ -1,9 +1,11 @@
+# This GitHub Action automates the process of building Grafana plugins.
+# (For more information, see https://github.com/grafana/plugin-actions/blob/main/build-plugin/README.md)
 name: Release
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*' # Run workflow on version tags, e.g. v1.0.0.
 
 permissions: read-all
 
@@ -15,63 +17,13 @@ jobs:
       attestations: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
+          persist-credentials: false
 
-      - uses: actions/setup-go@v5
+      - uses: grafana/plugin-actions/build-plugin@main
         with:
-          go-version: '1.23'
-          cache-dependency-path: go.sum
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build frontend
-        run: npm run build
-
-      - name: Build backend
-        run: |
-          go mod download
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_linux_amd64 ./pkg
-          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_linux_arm64 ./pkg
-          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_darwin_amd64 ./pkg
-          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_darwin_arm64 ./pkg
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_windows_amd64.exe ./pkg
-
-      - name: Sign plugin
-        id: sign
-        continue-on-error: true
-        env:
-          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
-        run: npx --yes @grafana/sign-plugin@latest
-
-      - name: Copy files to dist
-        run: |
-          cp LICENSE dist/ 2>/dev/null || true
-          cp README.md dist/ 2>/dev/null || true
-          cp CHANGELOG.md dist/ 2>/dev/null || true
-
-      - name: Package plugin
-        run: |
-          PLUGIN_ID="tobiasworkstech-sshprometheus-datasource"
-          VERSION="${GITHUB_REF#refs/tags/v}"
-          mv dist "${PLUGIN_ID}"
-          zip -r "${PLUGIN_ID}-${VERSION}.zip" "${PLUGIN_ID}"
-
-      - name: Generate build provenance attestation
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-path: tobiasworkstech-sshprometheus-datasource-*.zip
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: tobiasworkstech-sshprometheus-datasource-*.zip
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          attestation: true
+          go-version: '1.26'
+          node-version: '22'

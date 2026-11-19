@@ -12,25 +12,25 @@ import (
 )
 
 type TunnelConfig struct {
-	SSHHost         string
-	SSHPort         int
-	SSHUsername     string
-	AuthMethod      string
-	SSHPassword     string
-	SSHPrivateKey   string
+	SSHHost          string
+	SSHPort          int
+	SSHUsername      string
+	AuthMethod       string
+	SSHPassword      string
+	SSHPrivateKey    string
 	SSHKeyPassphrase string
-	RemoteHost      string
-	RemotePort      int
+	RemoteHost       string
+	RemotePort       int
 }
 
 type Tunnel struct {
-	config     TunnelConfig
-	client     *ssh.Client
-	listener   net.Listener
-	localAddr  string
-	done       chan struct{}
-	mu         sync.RWMutex
-	alive      bool
+	config    TunnelConfig
+	client    *ssh.Client
+	listener  net.Listener
+	localAddr string
+	done      chan struct{}
+	mu        sync.RWMutex
+	alive     bool
 }
 
 func NewTunnel(config TunnelConfig) (*Tunnel, error) {
@@ -195,7 +195,6 @@ func (t *Tunnel) handleConnection(localConn net.Conn) {
 
 	wg.Wait()
 }
-
 
 func (t *Tunnel) LocalAddr() string {
 	return t.localAddr

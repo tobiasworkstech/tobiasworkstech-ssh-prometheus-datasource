@@ -149,6 +149,24 @@ const typeOptions: Array<SelectableValue<string>> = [
   { label: 'Instant', value: 'instant' },
 ];
 
+function parseExpr(expr: string | undefined): { metric: string | null; filters: LabelFilter[] } {
+  const match = expr?.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)?(\{.*\})?$/);
+  if (!expr || !match) {
+    return { metric: expr || null, filters: [] };
+  }
+  const filters: LabelFilter[] = [];
+  if (match[2]) {
+    // Parse label filters from {label="value", ...}
+    const labelsStr = match[2].slice(1, -1);
+    const labelRegex = /([a-zA-Z_][a-zA-Z0-9_]*)\s*(=~|!=|!~|=)\s*"([^"]*)"/g;
+    let labelMatch;
+    while ((labelMatch = labelRegex.exec(labelsStr)) !== null) {
+      filters.push({ label: labelMatch[1], operator: labelMatch[2], value: labelMatch[3] });
+    }
+  }
+  return { metric: match[1] || null, filters };
+}
+
 export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
   const styles = useStyles2(getStyles);
   const currentQuery = { ...defaultQuery, ...query };
@@ -157,68 +175,48 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
   const [metrics, setMetrics] = useState<Array<SelectableValue<string>>>([]);
   const [labels, setLabels] = useState<Array<SelectableValue<string>>>([]);
   const [labelValues, setLabelValues] = useState<Record<string, Array<SelectableValue<string>>>>({});
-  const [labelFilters, setLabelFilters] = useState<LabelFilter[]>([]);
-  const [selectedMetric, setSelectedMetric] = useState<string | null>(currentQuery.expr || null);
-  const [metricsLoading, setMetricsLoading] = useState(false);
-  const [labelsLoading, setLabelsLoading] = useState(false);
+  // Parse the existing expression into builder state once, on first render
+  const [initialParse] = useState(() => parseExpr(currentQuery.expr));
+  const [labelFilters, setLabelFilters] = useState<LabelFilter[]>(initialParse.filters);
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(initialParse.metric);
+  // Metrics and labels are fetched on mount, so both start in the loading state
+  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [labelsLoading, setLabelsLoading] = useState(true);
   const [optionsOpen, setOptionsOpen] = useState(false);
 
-  // Parse existing expression into metric and label filters on initial load
-  // We intentionally only run this once to avoid overwriting builder state
-  useEffect(() => {
-    if (currentQuery.expr) {
-      const match = currentQuery.expr.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)?(\{.*\})?$/);
-      if (match) {
-        const metric = match[1] || '';
-        setSelectedMetric(metric || null);
 
-        if (match[2]) {
-          // Parse label filters from {label="value", ...}
-          const labelsStr = match[2].slice(1, -1);
-          const filters: LabelFilter[] = [];
-          const labelRegex = /([a-zA-Z_][a-zA-Z0-9_]*)\s*(=~|!=|!~|=)\s*"([^"]*)"/g;
-          let labelMatch;
-          while ((labelMatch = labelRegex.exec(labelsStr)) !== null) {
-            filters.push({
-              label: labelMatch[1],
-              operator: labelMatch[2],
-              value: labelMatch[3],
-            });
-          }
-          setLabelFilters(filters);
-        }
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const fetchMetrics = useCallback(() => {
+    datasource
+      .metricFindQuery('metrics()')
+      .then((result) => {
+        const metricOptions = result.map((r) => ({ label: r.text, value: r.text })).sort((a, b) => a.label.localeCompare(b.label));
+        setMetrics([{ label: 'Metrics explorer', value: '' }, ...metricOptions]);
+      })
+      .catch(() => setMetrics([{ label: 'Metrics explorer', value: '' }]))
+      .finally(() => setMetricsLoading(false));
+  }, [datasource]);
 
-  const loadMetrics = useCallback(async () => {
+  const fetchLabels = useCallback(() => {
+    datasource
+      .metricFindQuery('label_names()')
+      .then((result) => {
+        setLabels(result.map((r) => ({ label: r.text, value: r.text })).sort((a, b) => a.label.localeCompare(b.label)));
+      })
+      .catch(() => setLabels([]))
+      .finally(() => setLabelsLoading(false));
+  }, [datasource]);
+
+  const loadMetrics = useCallback(() => {
     if (metrics.length > 0) {return;}
     setMetricsLoading(true);
-    try {
-      const result = await datasource.metricFindQuery('metrics()');
-      const metricOptions = result.map((r) => ({ label: r.text, value: r.text })).sort((a, b) => a.label.localeCompare(b.label));
-      setMetrics([{ label: 'Metrics explorer', value: '' }, ...metricOptions]);
-    } catch (error) {
-      setMetrics([{ label: 'Metrics explorer', value: '' }]);
-    } finally {
-      setMetricsLoading(false);
-    }
-  }, [datasource, metrics.length]);
+    fetchMetrics();
+  }, [fetchMetrics, metrics.length]);
 
-  const loadLabels = useCallback(async () => {
+  const loadLabels = useCallback(() => {
     if (labels.length > 0) {return;}
     setLabelsLoading(true);
-    try {
-      const result = await datasource.metricFindQuery('label_names()');
-      const labelOptions = result.map((r) => ({ label: r.text, value: r.text })).sort((a, b) => a.label.localeCompare(b.label));
-      setLabels(labelOptions);
-    } catch (error) {
-      setLabels([]);
-    } finally {
-      setLabelsLoading(false);
-    }
-  }, [datasource, labels.length]);
+    fetchLabels();
+  }, [fetchLabels, labels.length]);
 
   const loadLabelValues = useCallback(async (label: string) => {
     if (labelValues[label]) {return;}
@@ -232,9 +230,9 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
   }, [datasource, labelValues]);
 
   useEffect(() => {
-    loadMetrics();
-    loadLabels();
-  }, [loadMetrics, loadLabels]);
+    fetchMetrics();
+    fetchLabels();
+  }, [fetchMetrics, fetchLabels]);
 
   const buildExpression = useCallback(() => {
     let expr = selectedMetric || '';

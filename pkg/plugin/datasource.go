@@ -39,8 +39,8 @@ type SSHPrometheusSettings struct {
 	PrometheusUsername   string `json:"prometheusUsername"`
 
 	// TLS Settings
-	TLSSkipVerify    bool `json:"tlsSkipVerify"`
-	TLSWithCACert    bool `json:"tlsWithCACert"`
+	TLSSkipVerify     bool `json:"tlsSkipVerify"`
+	TLSWithCACert     bool `json:"tlsWithCACert"`
 	TLSWithClientCert bool `json:"tlsWithClientCert"`
 
 	// HTTP Settings
@@ -127,7 +127,9 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 
 func createTLSConfig(settings SSHPrometheusSettings, secureData map[string]string) (*tls.Config, error) {
 	tlsConfig := &tls.Config{
-		InsecureSkipVerify: settings.TLSSkipVerify,
+		MinVersion: tls.VersionTLS12,
+		// Skipping verification is an explicit, opt-in datasource setting ("Skip TLS Verify").
+		InsecureSkipVerify: settings.TLSSkipVerify, // #nosec G402 -- user-controlled opt-in
 	}
 
 	// Load CA certificate

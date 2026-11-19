@@ -35,3 +35,7 @@ debug
 *.pem
 *.key
 id_rsa*
+
+# Archives
+*.zip
+coverage/

@@ -2,6 +2,24 @@
 
 All notable changes to the Grafana SSH Prometheus Datasource plugin will be documented in this file.
 
+## [1.0.4] - 2026-11-19
+
+### Changed
+
+- Migrated to Grafana's standard `@grafana/create-plugin` build tooling (`.config/`, `Magefile.go`, CI and release workflows); backend binaries now ship with the Go plugin build manifest
+- Upgraded `grafana-plugin-sdk-go` to v0.302.0, `golang.org/x/crypto` to v0.59.0, and the Go toolchain to 1.26.11
+- Upgraded `@grafana/*` frontend packages to 12.x and pinned patched versions of vulnerable transitive npm dependencies
+- Query editor parses the initial expression during state initialization instead of in an effect
+
+### Security
+
+- Resolved all critical/high findings from `govulncheck` and `osv-scanner`
+- TLS connections to Prometheus now require TLS 1.2 or later
+
+### Removed
+
+- Stale `docker/Dockerfile.plugin` (referenced the old `plugin/` subdirectory layout)
+
 ## [1.0.3] - 2026-06-11
 
 ### Added

@@ -48,8 +48,8 @@ Grafana → Plugin Backend (Go) → SSH Tunnel → Remote Prometheus
 
 ### Prerequisites
 
-- Node.js 18+
-- Go 1.23+
+- Node.js 22+
+- Go 1.26+
 - Docker & Docker Compose
 - Mage (Go build tool): `go install github.com/magefile/mage@latest`
 
@@ -62,9 +62,8 @@ npm install
 # Build frontend
 npm run build
 
-# Build backend
-go mod tidy
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o dist/gpx_sshprometheus_datasource_linux_amd64 ./pkg
+# Build backend (all platforms + go_plugin_build_manifest, required by the Grafana validator)
+mage -v buildAll
 ```
 
 ### Development Mode
@@ -309,7 +308,7 @@ pluginid/
 | `invalid-metadata` | Plugin ID must match pattern `org-name-type` (3 segments) |
 | `go-mod-not-found` | Place go.mod at repository root, not in subdirectory |
 | `packagejson-not-found` | Place package.json at repository root |
-| `code-rules-access-os-environment` | Don't include Magefile.go in source (uses os.Environ) |
+| `non-standard build tooling` / `Could not find or parse Go manifest file` | Use create-plugin `.config/` + the standard SDK `Magefile.go` and build with `mage` |
 | `js-map-no-match` | Source code must match built assets exactly |
 
 ### After Approval
